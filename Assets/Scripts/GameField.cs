@@ -8,6 +8,8 @@ public class GameField : MonoBehaviour
 {
     // ------------ INSPECTOR INTERFACE ---------------
     public int TileSize;
+    public GameObject DotPrefab;
+    public GameObject EnergizerPrefab;
 
     // ------------- PUBLIC SCRIPTING INTERFACE ----------------
     [Flags]
@@ -175,9 +177,22 @@ public class GameField : MonoBehaviour
                         break;
                     case '.':
                         setField(x, y, Tile.DOT);
+                        // Instanciate a new (eatable) Dot-prefab:
+                        Vector3 dot_position = new Vector3(
+                            x*TileSize-(TileSize/2),
+                            2,
+                            -(y*TileSize-(TileSize/2))
+                        );
+                        Instantiate(DotPrefab, dot_position, Quaternion.identity);
                         break;
                     case '0':
                         setField(x, y, Tile.ENERGIZER);
+                        Vector3 energizer_position = new Vector3(
+                            x*TileSize-(TileSize/2),
+                            2,
+                            -(y*TileSize-(TileSize/2))
+                        );
+                        Instantiate(EnergizerPrefab, energizer_position, Quaternion.identity);
                         break;
                     case ' ':
                         setField(x, y, Tile.FREE);
