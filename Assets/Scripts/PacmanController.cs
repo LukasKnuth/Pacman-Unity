@@ -6,8 +6,12 @@ public class PacmanController : MonoBehaviour
 
     public float Speed;
     private Vector3 CurrentDirection;
-    private float RayLength = 10f;
+    private Vector3 NextDirection;
     private GameField map;
+    /// <summary>
+    ///  Things that we collide with (can't move over/through)
+    /// </summary>
+    private GameField.Tile collision_flags = GameField.Tile.WALL | GameField.Tile.CAGE_DOOR;
 
     void Start()
     {
@@ -21,6 +25,9 @@ public class PacmanController : MonoBehaviour
         {
             Debug.LogError("Can't find GameField!");
         }
+        // Initialisation:
+        CurrentDirection = Vector3.zero;
+        NextDirection = Vector3.zero;
     }
 
 	// Update is called once per frame
@@ -32,47 +39,38 @@ public class PacmanController : MonoBehaviour
 
     private Vector3 GetDirection()
     {
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
-        if (horizontal > 0)
-        {
-            // Going Right
-            if (IsDirectionChangePossible(CurrentDirection, Vector3.right))
-            {
-                CurrentDirection = Vector3.right;
-            }
-        }
-        else if (horizontal < 0)
-        {
-            // Going left
-            if (IsDirectionChangePossible(CurrentDirection, Vector3.left))
-            {
-                CurrentDirection = Vector3.left;
-            }
-        }
-        else if (vertical > 0)
+        // Find the desired next direction:
+        float horizontal = Input.GetAxis("Horizontal");
+        float vertical = Input.GetAxis("Vertical");
+        if (vertical > 0)
         {
             // Going Up:
-            if (IsDirectionChangePossible(CurrentDirection, Vector3.forward))
-            {
-                CurrentDirection = Vector3.forward;
-            }
+            NextDirection = Vector3.forward;
         }
         else if (vertical < 0)
         {
             // Going Down:
-            if (IsDirectionChangePossible(CurrentDirection, Vector3.back))
-            {
-                CurrentDirection = Vector3.back;
-            }
+            NextDirection = Vector3.back;
+        }
+        else if (horizontal > 0)
+        {
+            NextDirection = Vector3.right;
+        }
+        else if (horizontal < 0)
+        {
+            NextDirection = Vector3.left;
+        }
+
+        // Check if we can go there:
+        if (NextDirection != Vector3.zero && IsDirectionChangePossible(CurrentDirection, NextDirection))
+        {
+            CurrentDirection = NextDirection;
+            NextDirection = Vector3.zero;
         }
         // Now, check if we can continue on this direction:
-        switch (map.getNextTile(transform.position, CurrentDirection))
+        else if (map.isColliding(transform.position, CurrentDirection, this.collision_flags))
         {
-            case GameField.Tile.WALL:
-            case GameField.Tile.CAGE_DOOR:
-                CurrentDirection = Vector3.zero;
-                break;
+            CurrentDirection = Vector3.zero;
         }
         return CurrentDirection;
     }
@@ -89,36 +87,11 @@ public class PacmanController : MonoBehaviour
             if (currentDirection == -newDirection)
             {
                 // Opposite direction is always allowed!
-                Debug.Log("Opposite!");
                 return true;
             }
             else
             {
-                GameField.Tile tile = map.getNextTile(transform.position, newDirection);
-                switch (tile)
-                {
-                    case GameField.Tile.WALL:
-                    case GameField.Tile.CAGE_DOOR:
-                        return false;
-                    case GameField.Tile.DOT:
-                    case GameField.Tile.ENERGIZER:
-                    case GameField.Tile.FREE:
-                    case GameField.Tile.TELEPORTER:
-                        return true;
-                    default:
-                        Debug.LogError("Unknown Tile type: "+tile);
-                        return false;
-                }
-                /*RaycastHit hit;
-                Ray ray = new Ray(transform.position, newDirection);
-                int layerMask = 1 << 8;
-                if (Physics.Raycast(ray, out hit, RayLength, layerMask))
-                {
-                    // Can't change directions here, we would run into a Wall.
-                    Debug.Log("Ray hit "+hit.collider.gameObject.name);
-                    return false;
-                }
-                return true;*/
+                return map.canChangeDirection(transform.position, currentDirection, newDirection, collision_flags);
             }
         }
     }

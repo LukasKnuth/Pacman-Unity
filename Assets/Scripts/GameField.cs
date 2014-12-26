@@ -10,9 +10,10 @@ public class GameField : MonoBehaviour
     public int TileSize;
 
     // ------------- PUBLIC SCRIPTING INTERFACE ----------------
+    [Flags]
     public enum Tile
     {
-        FREE, WALL, DOT, ENERGIZER, TELEPORTER, CAGE_DOOR
+        FREE=1, WALL=2, DOT=4, ENERGIZER=8, TELEPORTER=16, CAGE_DOOR=32
     }
     
 
@@ -41,6 +42,36 @@ public class GameField : MonoBehaviour
         }
     }
 
+    public bool isColliding(Vector3 position, Vector3 direction, Tile collision_tiles)
+    {
+        Tile next = getNextTile(position, direction);
+        if ((collision_tiles & next) == next)
+        {
+            // We will collide, check if we should stop already:
+            return centeredOnTile(position, direction);
+        }   
+        else
+        {
+            // Not interested in that kind of field:
+            return false;
+        }
+    }
+
+    public bool canChangeDirection(Vector3 position, Vector3 current_direction, Vector3 next_direction,
+        Tile collision_tiles)
+    {
+        Tile next = getNextTile(position, getAbsoluteDirection(next_direction));
+        if ((collision_tiles & next) == next)
+        {
+            // The Tile in the given direction will colide, no change possible!
+            return false;
+        }
+        else
+        {
+            return centeredOnTile(position, current_direction);
+        }
+    }
+
     // ----------------- PRIVATE INTERFACE -------------------------
 
     private class Field
@@ -53,6 +84,11 @@ public class GameField : MonoBehaviour
             this.X = x;
             this.Y = y;
         }
+
+        public override string ToString()
+        {
+            return String.Format("({0}|{1})", X, Y);
+        }
     }
 
     private Field findField(Vector3 position)
@@ -60,6 +96,38 @@ public class GameField : MonoBehaviour
         int x = (int)(Math.Abs(position.x) / TileSize) + 1;
         int y = (int)(Math.Abs(position.z) / TileSize) + 1;
         return new Field(x, y);
+    }
+
+    private Field getPositionOnTile(Vector3 position)
+    {
+        int x = (int)(Math.Abs(position.x) % TileSize);
+        int y = (int)(Math.Abs(position.z) % TileSize);
+        return new Field(x, y);
+    }
+
+    private bool centeredOnTile(Vector3 position, Vector3 direction)
+    {
+        Field onTile = getPositionOnTile(position);
+        Vector3 absolute_direction = getAbsoluteDirection(direction);
+        int center_threshold = TileSize / 2;
+        if (absolute_direction == Vector3.forward)
+        {
+            // Up:
+            if (onTile.Y <= center_threshold) return true;
+        }
+        else if (absolute_direction == Vector3.back)
+        {
+            if (onTile.Y >= center_threshold) return true;
+        }
+        else if (absolute_direction == Vector3.left)
+        {
+            if (onTile.X <= center_threshold) return true;
+        }
+        else if (absolute_direction == Vector3.right)
+        {
+            if (onTile.X >= center_threshold) return true;
+        }
+        return false;
     }
 
     private readonly Vector3[] compass = {Vector3.left, Vector3.right, Vector3.forward, Vector3.back, Vector3.up, Vector3.down};
