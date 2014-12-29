@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using UnityEngine;
@@ -44,6 +45,46 @@ public class GameField : MonoBehaviour
         }
     }
 
+    public class RadarResult
+    {
+        public Vector3 Field { get; private set; }
+        public Tile Tile { get; private set; }
+
+        public RadarResult(Vector3 field, Tile tile)
+        {
+            Field = field;
+            Tile = tile;
+        }
+    }
+
+    /// <summary>
+    /// Get all Tiles and their global position around the given position.
+    /// </summary>
+    public Dictionary<Vector3, RadarResult> getTilesAround(Vector3 position)
+    {
+        Field field = findField(position);
+        Dictionary<Vector3, RadarResult> result = new Dictionary<Vector3, RadarResult>(4);
+
+        // Left:
+        result.Add(Vector3.right, new RadarResult(
+            getFieldPosition(field.X + 1, field.Y),
+            this.game_field[field.Y][field.X + 1]
+        ));
+        result.Add(Vector3.left, new RadarResult(
+            getFieldPosition(field.X - 1, field.Y),
+            this.game_field[field.Y][field.X - 1]
+        ));
+        result.Add(Vector3.back, new RadarResult(
+            getFieldPosition(field.X, field.Y + 1),
+            this.game_field[field.Y + 1][field.X]
+        ));
+        result.Add(Vector3.forward, new RadarResult(
+            getFieldPosition(field.X, field.Y - 1),
+            this.game_field[field.Y - 1][field.X]
+        ));
+        return result;
+    }
+
     public bool isColliding(Vector3 position, Vector3 direction, Tile collision_tiles)
     {
         Tile next = getNextTile(position, direction);
@@ -74,9 +115,7 @@ public class GameField : MonoBehaviour
         }
     }
 
-    // ----------------- PRIVATE INTERFACE -------------------------
-
-    private class Field
+    public class Field
     {
         public int X { get; private set; }
         public int Y { get; private set; }
@@ -91,13 +130,41 @@ public class GameField : MonoBehaviour
         {
             return String.Format("({0}|{1})", X, Y);
         }
+
+        public static bool operator ==(Field f1, Field f2)
+        {
+            if (!object.ReferenceEquals(f1, null) && !object.ReferenceEquals(f2, null))
+            {
+                return f1.X == f2.X && f1.Y == f2.Y;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public static bool operator !=(Field f1, Field f2)
+        {
+            return !(f1 == f2);
+        }
     }
 
-    private Field findField(Vector3 position)
+    public Field findField(Vector3 position)
     {
         int x = (int)(Math.Abs(position.x) / TileSize) + 1;
         int y = (int)(Math.Abs(position.z) / TileSize) + 1;
         return new Field(x, y);
+    }
+
+    // ----------------- PRIVATE INTERFACE -------------------------
+
+    private Vector3 getFieldPosition(int x, int y)
+    {
+        return new Vector3(
+            x*TileSize + (TileSize/2),
+            0,
+            -(y*TileSize + (TileSize/2))
+        );
     }
 
     private Field getPositionOnTile(Vector3 position)

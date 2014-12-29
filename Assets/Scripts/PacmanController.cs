@@ -3,11 +3,22 @@ using System.Collections;
 
 public class PacmanController : MonoBehaviour
 {
-
+    // ---------- PUBLIC INSPECTOR INTERFACE -----------------
     public float Speed;
-    private Vector3 CurrentDirection;
-    private Vector3 NextDirection;
-    private GameField map;
+
+    // ---------- PUBLIC SCRIPTING INTERFACE -----------------
+    public void Reset()
+    {
+        _currentDirection = Vector3.zero;
+        _nextDirection = Vector3.zero;
+        transform.position = this._startPosition;
+    }
+
+    // ---------- PRIVATE SCRIPTING INTERFACE -----------------
+    private Vector3 _currentDirection;
+    private Vector3 _nextDirection;
+    private Vector3 _startPosition;
+    private GameField _map;
     /// <summary>
     ///  Things that we collide with (can't move over/through)
     /// </summary>
@@ -19,15 +30,15 @@ public class PacmanController : MonoBehaviour
         GameObject obj = GameObject.FindWithTag("Map");
         if (obj != null)
         {
-            map = obj.GetComponent<GameField>();
+            _map = obj.GetComponent<GameField>();
         }
-        if (map == null)
+        if (_map == null)
         {
             Debug.LogError("Can't find GameField!");
         }
+        this._startPosition = transform.position;
         // Initialisation:
-        CurrentDirection = Vector3.zero;
-        NextDirection = Vector3.zero;
+        this.Reset();
     }
 
 	// Update is called once per frame
@@ -45,34 +56,34 @@ public class PacmanController : MonoBehaviour
         if (vertical > 0)
         {
             // Going Up:
-            NextDirection = Vector3.forward;
+            _nextDirection = Vector3.forward;
         }
         else if (vertical < 0)
         {
             // Going Down:
-            NextDirection = Vector3.back;
+            _nextDirection = Vector3.back;
         }
         else if (horizontal > 0)
         {
-            NextDirection = Vector3.right;
+            _nextDirection = Vector3.right;
         }
         else if (horizontal < 0)
         {
-            NextDirection = Vector3.left;
+            _nextDirection = Vector3.left;
         }
 
         // Check if we can go there:
-        if (NextDirection != Vector3.zero && IsDirectionChangePossible(CurrentDirection, NextDirection))
+        if (_nextDirection != Vector3.zero && IsDirectionChangePossible(_currentDirection, _nextDirection))
         {
-            CurrentDirection = NextDirection;
-            NextDirection = Vector3.zero;
+            _currentDirection = _nextDirection;
+            _nextDirection = Vector3.zero;
         }
         // Now, check if we can continue on this direction:
-        else if (map.isColliding(transform.position, CurrentDirection, this.collision_flags))
+        else if (_map.isColliding(transform.position, _currentDirection, this.collision_flags))
         {
-            CurrentDirection = Vector3.zero;
+            _currentDirection = Vector3.zero;
         }
-        return CurrentDirection;
+        return _currentDirection;
     }
 
     private bool IsDirectionChangePossible(Vector3 currentDirection, Vector3 newDirection)
@@ -91,7 +102,7 @@ public class PacmanController : MonoBehaviour
             }
             else
             {
-                return map.canChangeDirection(transform.position, currentDirection, newDirection, collision_flags);
+                return _map.canChangeDirection(transform.position, currentDirection, newDirection, collision_flags);
             }
         }
     }
