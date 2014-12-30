@@ -95,10 +95,12 @@ public class PacmanController : MonoBehaviour
         }
         else
         {
-            if (currentDirection == -newDirection)
+            if (newDirection == -currentDirection)
             {
-                // Opposite direction is always allowed!
-                return true;
+                // Opposite direction is always allowed, if there is no wall:
+                GameField.Tile next = this._map.getNextTile(transform.position, newDirection);
+                return ((collision_flags & next) != next);
+                // TODO This still bugs sometimes (allows you to go through walls when doing it fast). WHY?
             }
             else
             {

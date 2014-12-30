@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using UnityEngine;
 using System.Collections;
+using Random = UnityEngine.Random;
 
 public class GameField : MonoBehaviour
 {
@@ -43,6 +44,13 @@ public class GameField : MonoBehaviour
             Debug.LogError("Invalid direction!");
             return Tile.WALL;
         }
+    }
+
+    public Vector3 getRandomTile()
+    {
+        int x = Random.Range(0, FIELD_WIDTH - 1);
+        int y = Random.Range(0, FIELD_HEIGHT - 1);
+        return getFieldPosition(x, y);
     }
 
     public class RadarResult
@@ -157,6 +165,8 @@ public class GameField : MonoBehaviour
     }
 
     // ----------------- PRIVATE INTERFACE -------------------------
+    private const int FIELD_HEIGHT = 31;
+    private const int FIELD_WIDTH = 28;
 
     private Vector3 getFieldPosition(int x, int y)
     {
@@ -293,10 +303,10 @@ public class GameField : MonoBehaviour
 
     private void initField()
     {
-        this.game_field = new Tile[31][];
+        this.game_field = new Tile[FIELD_HEIGHT][];
         for (int i = 0; i < game_field.Length; i++)
         {
-            game_field[i] = new Tile[28];
+            game_field[i] = new Tile[FIELD_WIDTH];
         }
     }
 }

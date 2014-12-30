@@ -4,20 +4,20 @@ using System.Collections;
 [RequireComponent(typeof(Consumable))]
 public class EnergizerConsumable : MonoBehaviour {
 
-    private GameController controller;
+    private Cage _cage;
 
     // Use this for initialization
     void Start()
     {
         // Find the GameController.
-        GameObject obj = GameObject.FindWithTag("GameController");
+        GameObject obj = GameObject.FindWithTag("Cage");
         if (obj != null)
         {
-            controller = obj.GetComponent<GameController>();
+            this._cage = obj.GetComponent<Cage>();
         }
-        if (controller == null)
+        if (this._cage == null)
         {
-            Debug.LogError("Can't find GameController!");
+            Debug.LogError("Can't find Cage!");
         }
     }
 	
@@ -26,8 +26,7 @@ public class EnergizerConsumable : MonoBehaviour {
     {
         if (other.tag == "Player")
         {
-            // TODO Change the global mode to SCATTER
-            Debug.Log("Change Ghost-Mode to SCATTER!!");
+            this._cage.EnergizerConsumed();
         }
     }
 }
