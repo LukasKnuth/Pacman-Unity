@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEditor;
+﻿using System.Collections.Generic;
+using Pacman.Map;
 using UnityEngine;
-using System.Collections;
-using Random = UnityEngine.Random;
 
 [RequireComponent(typeof(Collider))]
 [RequireComponent(typeof(Rigidbody))]
@@ -41,7 +38,7 @@ public abstract class Ghost : MonoBehaviour {
         this._currentDirection = Vector3.zero;
         SetMode(Mode.CAGED, false);
         transform.position = position;
-        this._currentField = this._map.findField(transform.position);
+        this._currentTile = this._map.GetTileAt(transform.position);
     }
 
     /// <summary>
@@ -76,12 +73,18 @@ public abstract class Ghost : MonoBehaviour {
         Debug.Log("New Mode is: " + _currentMode);
     }
 
+    // ---------- PROTECTED SCRIPTING INTERFACE ----------------
+    protected GameField GetMap()
+    {
+        return this._map;
+    }
+
     // ---------- PRIVATE SCRIPTING INTERFACE ----------------
     private PacmanController _pacman;
     private Cage _cage;
     private GameField _map;
     private Vector3 _currentDirection;
-    private GameField.Field _currentField;
+    private Tile _currentTile;
     private Mode _currentMode;
     private Mode _previousMode;
 
@@ -175,7 +178,7 @@ public abstract class Ghost : MonoBehaviour {
                 break;
             case Mode.FRIGHTENED:
 	            currentSpeedPenalty = FRIGHTENED_SPEED_PENALTY;
-	            targetTile = this._map.getRandomTile();
+	            targetTile = this._map.GetRandomTile().Position;
 	            break;
             case Mode.RETURNING:
 	            currentSpeedPenalty = RETURNING_SPEED_PENALTY;
@@ -195,39 +198,39 @@ public abstract class Ghost : MonoBehaviour {
 
     private Vector3 GetMoveDirection(Vector3 TargetTile)
     {
-        GameField.Tile exclude = GameField.Tile.WALL;
+        GameField.TileType exclude = GameField.TileType.Wall;
         if (this._currentMode != Mode.RETURNING)
         {
             // If we're not returning, we can't go into the cage.
-            exclude |= GameField.Tile.CAGE_DOOR;
+            exclude |= GameField.TileType.CageDoor;
         }
         // Where are we?
-        float shortest_distance = float.MaxValue;
-        Vector3 next_direction = Vector3.zero;
-        Dictionary<Vector3, GameField.RadarResult> radar = _map.getTilesAround(transform.position);
-        foreach (KeyValuePair<Vector3, GameField.RadarResult> direction in radar)
+        float shortestDistance = float.MaxValue;
+        Vector3 nextDirection = Vector3.zero;
+        Tile currentTile = this._map.GetTileAt(transform.position);
+        foreach (KeyValuePair<Vector3, Tile> direction in currentTile.Around())
         {
             if (direction.Key != -this._currentDirection)
             {
                 // It's not the opposite direction
-                if ((exclude & direction.Value.Tile) != direction.Value.Tile)
+                if ((exclude & direction.Value.Type) != direction.Value.Type)
                 {
                     // The tile is a valid option:
-                    float distance = Vector3.Distance(direction.Value.Field, TargetTile);
-                    if (distance < shortest_distance)
+                    float distance = Vector3.Distance(direction.Value.Position, TargetTile);
+                    if (distance < shortestDistance)
                     {
-                        next_direction = direction.Key;
-                        shortest_distance = distance;
-                        _inTeleporter = (direction.Value.Tile == GameField.Tile.TELEPORTER);
+                        nextDirection = direction.Key;
+                        shortestDistance = distance;
+                        _inTeleporter = (direction.Value.Type == GameField.TileType.Teleporter);
                     }
                 }
             }
         }
         // Only turn if we're around the middle of the hallway
-        if (this._map.canChangeDirection(transform.position, this._currentDirection, next_direction, exclude))
+        if (transform.position.IsCenteredOn(currentTile, this._currentDirection))
         {
             // Check if we moved to the next field:
-            if (this._currentField == this._map.findField(transform.position))
+            if (this._currentTile == this._map.GetTileAt(transform.position))
             {
                 // A change of direction is only allowed once per field!
                 return _currentDirection;
@@ -236,8 +239,8 @@ public abstract class Ghost : MonoBehaviour {
             }
             else
             {
-                this._currentField = this._map.findField(transform.position);
-                this._currentDirection = next_direction;
+                this._currentTile = this._map.GetTileAt(transform.position);
+                this._currentDirection = nextDirection;
             }
         }
         return this._currentDirection;

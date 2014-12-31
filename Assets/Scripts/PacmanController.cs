@@ -1,5 +1,6 @@
-﻿using UnityEngine;
-using System.Collections;
+﻿using System.Collections.Generic;
+using Pacman.Map;
+using UnityEngine;
 
 public class PacmanController : MonoBehaviour
 {
@@ -14,15 +15,20 @@ public class PacmanController : MonoBehaviour
         transform.position = this._startPosition;
     }
 
+    public Vector3 GetCurrentDirection() {
+        return this._currentDirection;
+    }
+
     // ---------- PRIVATE SCRIPTING INTERFACE -----------------
     private Vector3 _currentDirection;
     private Vector3 _nextDirection;
     private Vector3 _startPosition;
     private GameField _map;
+
     /// <summary>
     ///  Things that we collide with (can't move over/through)
     /// </summary>
-    private GameField.Tile collision_flags = GameField.Tile.WALL | GameField.Tile.CAGE_DOOR;
+    private GameField.TileType collision_flags = GameField.TileType.Wall | GameField.TileType.CageDoor;
 
     void Start()
     {
@@ -79,9 +85,17 @@ public class PacmanController : MonoBehaviour
             _nextDirection = Vector3.zero;
         }
         // Now, check if we can continue on this direction:
-        else if (_map.isColliding(transform.position, _currentDirection, this.collision_flags))
-        {
-            _currentDirection = Vector3.zero;
+        else {
+            Tile currentTile = this._map.GetTileAt(transform.position);
+            Tile nextTile = currentTile.InDirection(this._currentDirection);
+            if ((collision_flags & nextTile.Type) == nextTile.Type)
+            {
+                // We are on collision-course, see if we should stop now (at the center):
+                if (transform.position.IsCenteredOn(currentTile, this._currentDirection))
+                {
+                    this._currentDirection = Vector3.zero;
+                }
+            }
         }
         return _currentDirection;
     }
@@ -95,16 +109,23 @@ public class PacmanController : MonoBehaviour
         }
         else
         {
+            Tile next = this._map.GetTileAt(transform.position).InDirection(newDirection);
             if (newDirection == -currentDirection)
             {
                 // Opposite direction is always allowed, if there is no wall:
-                GameField.Tile next = this._map.getNextTile(transform.position, newDirection);
-                return ((collision_flags & next) != next);
+                return ((collision_flags & next.Type) != next.Type);
                 // TODO This still bugs sometimes (allows you to go through walls when doing it fast). WHY?
             }
             else
             {
-                return _map.canChangeDirection(transform.position, currentDirection, newDirection, collision_flags);
+                if ((collision_flags & next.Type) == next.Type) {
+                    // Can't go in that direction:
+                    return false;
+                } else {
+                    // Check if we're centered:
+                    Tile currentTile = this._map.GetTileAt(transform.position);
+                    return transform.position.IsCenteredOn(currentTile, this._currentDirection);
+                }
             }
         }
     }

@@ -1,8 +1,5 @@
-﻿using System;
-using UnityEditor;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
 
 public class GameController : MonoBehaviour
 {
@@ -47,7 +44,6 @@ public class GameController : MonoBehaviour
     private int _points;
     private int _lives;
     private Cage _cage;
-    private GameField _map;
     private PacmanController _player;
 
 	// Use this for initialization
@@ -60,12 +56,6 @@ public class GameController : MonoBehaviour
 	    if (this._cage == null)
 	    {
 	        Debug.LogError("Couldn't find the cage!");
-	    }
-	    GameObject mapGameObject = GameObject.FindWithTag("Map");
-	    this._map = mapGameObject.GetComponent<GameField>();
-	    if (this._map == null)
-	    {
-	        Debug.LogError("Didn't find Map!");
 	    }
 	    GameObject playerGameObject = GameObject.FindWithTag("Player");
 	    this._player = playerGameObject.GetComponent<PacmanController>();
