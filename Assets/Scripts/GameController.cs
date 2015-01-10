@@ -7,12 +7,25 @@ public class GameController : MonoBehaviour
     // ---------- PUBLIC INSPECTOR INTERFACE -----------------
     public Text PointsDisplay;
     public Text LivesDisplay;
+    public GameObject FieldPointsPrefab;
+    public Canvas UiCanvas;
 
     // ---------- PUBLIC SCRIPTING INTERFACE -----------------
-    public void AddPoints(int points)
-    {
-        this._points += points;
-        this.PointsDisplay.text = "Points: " + this._points;
+    /// <summary>
+    /// To be called, when a normal Dot or Energizer was eaten by the player.
+    /// </summary>
+    public void DotConsumed(int points_worth) {
+        this.AddPoints(points_worth);
+        this._cage.DotComsumed();
+    }
+
+    /// <summary>
+    /// To be called, when a Ghost was eaten by the player.
+    /// </summary>
+    public void GhostConsumed(int points_worth, Vector3 position) {
+        this.AddPoints(points_worth);
+        // Display the points this kill was worth:
+        this.DisplayOnScreenPoints(position, points_worth.ToString());
     }
 
     public void SubstractLive()
@@ -46,6 +59,24 @@ public class GameController : MonoBehaviour
     private Cage _cage;
     private PacmanController _player;
 
+    private readonly Quaternion _textRotation = Quaternion.AngleAxis(90, Vector3.right);
+    private void DisplayOnScreenPoints(Vector3 position, string text)
+    {
+        GameObject ui = Instantiate(FieldPointsPrefab, position, this._textRotation) as GameObject;
+        ui.transform.SetParent(UiCanvas.transform, true);
+        Text onscreen_text = ui.GetComponent<Text>();
+        if (onscreen_text == null) {
+            Debug.LogError("Text not found on kill-display component!");
+        }
+        onscreen_text.text = text;
+    }
+
+    private void AddPoints(int points)
+    {
+        this._points += points;
+        this.PointsDisplay.text = "Points: " + this._points;
+    }
+
 	// Use this for initialization
 	void Start ()
 	{
@@ -71,6 +102,7 @@ public class GameController : MonoBehaviour
     {
         if (!_started)
         {
+            this._cage.ResetGhosts();
             this._cage.StartGhosts();
             _started = true;
         }

@@ -26,7 +26,7 @@ public class Consumable : MonoBehaviour
     {
         if (other.tag == "Player")
         {
-            controller.AddPoints(this.ScoreValue);
+            controller.DotConsumed(this.ScoreValue);
             Destroy(gameObject);
         }
     }

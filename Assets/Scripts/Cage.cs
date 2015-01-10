@@ -1,11 +1,12 @@
 ﻿using UnityEngine;
-using System.Collections;
+using UnityEngine.UI;
 
 public class Cage : MonoBehaviour {
 
     // ---------- PUBLIC INSPECTOR INTERFACE -----------------
     public GameObject[] Ghosts;
     public Vector3 ReturnPoint;
+    public Vector3 ExitPoint;
 
     // ---------- PUBLIC SCRIPTING INTERFACE -----------------
 
@@ -17,24 +18,37 @@ public class Cage : MonoBehaviour {
         this._gameController.SubstractLive();
     }
 
+    private readonly int[] _killWorth = { 200, 400, 800, 1600 };
     /// <summary>
-    /// Called by the <see cref="GameController"/> to reset all Ghosts.
+    /// Called, when the palyer ate a ghost (while in frightened mode)
     /// </summary>
-    public void ResetGhosts()
-    {
-        this._blinky.AI.Reset(_blinky.ResetPosition);
+    public void GotGhost(Ghost ghost) {
+        this._ghostKillCombo++;
+        int worth = _killWorth[this._ghostKillCombo - 1];
+        this._gameController.GhostConsumed(worth, ghost.transform.position);
     }
 
     /// <summary>
-    /// Start the countdowns to unleash the ghosts.
+    /// Called by the <see cref="GameController"/> to reset all Ghosts.
+    /// </summary>
+    public void ResetGhosts() {
+        foreach (GhostHolder ghost in this._allGhosts) {
+            ghost.AI.Reset(ghost.ResetPosition);
+        }
+    }
+
+    /// <summary>
+    /// Starts a new round and the countdowns to unleash the ghosts.
     /// </summary>
     public void StartGhosts()
     {
-        _blinky.AI.Unleash(Vector3.left, Ghost.Mode.CHASE);
-        // TODO Start countdowns for other ghosts.
+        this._allGhosts[BLINKY_INDEX].AI.Unleash(Vector3.left, Ghost.Mode.CHASE, false);
+        this._allGhosts[PINKY_INDEX].AI.Unleash(Vector3.forward, Ghost.Mode.CHASE);
         // Start the mode changes:
         this._currentDuration = 0;
         this._currentModeIteration = 0;
+        this._dotsConsumed = 0;
+        this._ghostKillCombo = 0;
     }
 
     /// <summary>
@@ -46,13 +60,37 @@ public class Cage : MonoBehaviour {
     }
 
     /// <summary>
+    /// The point that ghosts should target, when leaving the cage.
+    /// </summary>
+    public Vector3 GetExitPoint()
+    {
+        return this.ExitPoint;
+    }
+
+    /// <summary>
     /// Makes all ghosts eatable and run away from the player.
     /// </summary>
     public void EnergizerConsumed()
     {
-        this._blinky.AI.SetMode(Ghost.Mode.FRIGHTENED);
-        // TODO Add the others!
+        foreach (GhostHolder ghost in this._allGhosts) {
+            ghost.AI.SetMode(Ghost.Mode.FRIGHTENED);
+        }
         this._frightenedTimer = FRIGHTENED_TIME;
+    }
+
+    /// <summary>
+    /// The player has consumed a new Dot.
+    /// </summary>
+    public void DotComsumed() {
+        this._dotsConsumed++;
+        if (_dotsConsumed == 30)
+        {
+            // TODO Release inky!
+        }
+        if (_dotsConsumed == 60)
+        {
+            // TODO Release clyde!
+        }
     }
 
     /// <summary>
@@ -61,18 +99,27 @@ public class Cage : MonoBehaviour {
     public const float FRIGHTENED_TIME = 6f;
 
     // ---------- PRIVATE SCRIPTING INTERFACE -----------------
-    private GhostHolder _blinky;
+    private const int BLINKY_INDEX = 0;
+    private const int PINKY_INDEX = 1;
+    private int _dotsConsumed = 0;
+    private int _ghostKillCombo = 0;
+    private GhostHolder[] _allGhosts;
     private GameController _gameController;
 
 	// Use this for initialization
 	void Start () {
+        this._allGhosts = new GhostHolder[Ghosts.Length];
 	    foreach (GameObject g in Ghosts)
 	    {
 	        Ghost ghost = g.GetComponent<Ghost>();
 	        if (ghost is Blinky)
 	        {
-	            this._blinky = new GhostHolder(ghost, g.transform.position);
-	        }
+	            this._allGhosts[BLINKY_INDEX] = new GhostHolder(ghost, g.transform.position);
+            }
+            else if (ghost is Pinky) {
+                this._allGhosts[PINKY_INDEX] = new GhostHolder(ghost, g.transform.position);
+            }
+            // TODO Add the others!
 	    }
 	    GameObject controllerGameObject = GameObject.FindWithTag("GameController");
 	    this._gameController = controllerGameObject.GetComponent<GameController>();
@@ -80,9 +127,8 @@ public class Cage : MonoBehaviour {
 	    {
 	        Debug.LogError("Couldn't find the game-controller!");
 	    }
-
 	}
-	
+
     /// <summary>
     /// A holder for everything related to a single ghost.
     /// </summary>
@@ -98,6 +144,9 @@ public class Cage : MonoBehaviour {
         }
     }
 
+    /// <summary>
+    /// A change of the global Ghost mode, followed by waiting for the given duration.
+    /// </summary>
     private class ModeChange
     {
         public int Duration { get; private set; }
@@ -126,12 +175,13 @@ public class Cage : MonoBehaviour {
     private int _currentModeIteration = 0;
     private float _currentDuration = 0;
     private float _frightenedTimer = 0;
+
     void Update()
     {
         if (this._frightenedTimer > 0)
         {
-            if (_frightenedTimer > 0 && _frightenedTimer - Time.deltaTime <= 0)
-            {
+            if (_frightenedTimer > 0 && _frightenedTimer - Time.deltaTime <= 0) {
+                this._ghostKillCombo = 0;
                 Debug.Log("Fright time over!");
             }
             // Ghosts are frightened, do the frightened timer:
@@ -148,8 +198,9 @@ public class Cage : MonoBehaviour {
                 if (this._currentModeIteration >= MODE_CHANGES.Length) return;
                 // Countdown is over:
                 ModeChange change = MODE_CHANGES[_currentModeIteration];
-                _blinky.AI.SetMode(change.Mode);
-                // TODO Add the others!
+                foreach (GhostHolder ghost in this._allGhosts) {
+                    ghost.AI.SetMode(change.Mode);
+                }
                 // new Countdown:
                 this._currentDuration = change.Duration;
                 this._currentModeIteration++;

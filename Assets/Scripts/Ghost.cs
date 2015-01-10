@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Pacman.Map;
 using UnityEngine;
 
@@ -24,9 +25,14 @@ public abstract class Ghost : MonoBehaviour {
     /// <summary>
     /// Unleashes this ghost into the maze.
     /// </summary>
-    public void Unleash(Vector3 direction, Mode mode)
+    public void Unleash(Vector3 direction, Mode mode, bool exitCage = true)
     {
         this._currentDirection = direction;
+        if (exitCage)
+        {
+            // The ghost is starting from the cage, move out first:
+            this._leavingCage = true;
+        }
         SetMode(mode, false);
     }
 
@@ -38,7 +44,8 @@ public abstract class Ghost : MonoBehaviour {
         this._currentDirection = Vector3.zero;
         SetMode(Mode.CAGED, false);
         transform.position = position;
-        this._currentTile = this._map.GetTileAt(transform.position);
+        this._currentTile = this._map.GetTileAt(position);
+        this._leavingCage = false;
     }
 
     /// <summary>
@@ -46,6 +53,8 @@ public abstract class Ghost : MonoBehaviour {
     /// </summary>
     public void SetMode(Mode new_mode, bool force_reversal = true)
     {
+        // TODO If the ghost is in the cage, don't change the mode
+        // TODO This still buggy, when we're in RETURNING and a timed mode-change happens, we can't enter the cage. Why??
         if (this._currentMode == Mode.RETURNING && (new_mode != this._previousMode))
         {
             // We're currently returning and have not yet reached the point to reset our mode.
@@ -87,9 +96,10 @@ public abstract class Ghost : MonoBehaviour {
     private Tile _currentTile;
     private Mode _currentMode;
     private Mode _previousMode;
-
+    
     private float _frightenedTimerStart;
     private bool _inTeleporter = false;
+    private bool _leavingCage = false;
 
     private const float FRIGHTENED_SPEED_PENALTY = 0.5f; // -50%
     private const float TELEPORTER_SPEED_PENALTY = 0.6f; // -40%
@@ -122,23 +132,25 @@ public abstract class Ghost : MonoBehaviour {
         {
             Debug.LogError("Can't find the Cage!");
         }
-        this.Reset(transform.position);
 	}
 
     void OnTriggerEnter(Collider other)
     {
         if (other.tag == "Player")
         {
-            if (this._currentMode != Mode.FRIGHTENED && this._currentMode != Mode.RETURNING)
-            {
-                // Got him!
-                this._cage.GotPacman();
-            }
-            else
-            {
+            if (this._currentMode == Mode.FRIGHTENED) {
                 // He got me:
                 SetMode(Mode.RETURNING, false);
                 this._frightenedTimerStart = 0;
+                this._cage.GotGhost(this);
+            }
+            else if (this._currentMode == Mode.RETURNING) {
+                // Already dead, ignore.
+                return;
+            }
+            else {
+                // Got him!
+                this._cage.GotPacman();
             }
         }
     }
@@ -161,29 +173,44 @@ public abstract class Ghost : MonoBehaviour {
                 this._currentDirection = Vector3.forward;
             }
 	    }
+        // If we're leaving the cage, check if we're out yet:
+	    if (_leavingCage)
+	    {
+	        float distance = Vector3.Distance(transform.position, this._cage.GetExitPoint());
+	        if (distance < 5)
+	        {
+	            this._leavingCage = false;
+	        }
+	    }
         // Choose the target based on the current mode:
         Vector3 targetTile = Vector3.zero;
         float currentSpeedPenalty = 1f;
-	    switch (this._currentMode)
+	    if (_leavingCage)
 	    {
-	        case Mode.CAGED:
-                // TODO Move up and down in the cage...
-                targetTile = Vector3.zero;
-                break;
-            case Mode.SCATTER:
-	            targetTile = HomeCorner;
-                break;
-            case Mode.CHASE:
-	            targetTile = GetTargetTile(this._pacman);
-                break;
-            case Mode.FRIGHTENED:
-	            currentSpeedPenalty = FRIGHTENED_SPEED_PENALTY;
-	            targetTile = this._map.GetRandomTile().Position;
-	            break;
-            case Mode.RETURNING:
-	            currentSpeedPenalty = RETURNING_SPEED_PENALTY;
-	            targetTile = this._cage.GetReturnPoint();
-                break;
+	        targetTile = this._cage.GetExitPoint();
+	    }
+	    else
+	    {
+            switch (this._currentMode) {
+                case Mode.CAGED:
+                    // TODO Move up and down in the cage...
+                    targetTile = Vector3.zero;
+                    break;
+                case Mode.SCATTER:
+                    targetTile = HomeCorner;
+                    break;
+                case Mode.CHASE:
+                    targetTile = GetTargetTile(this._pacman);
+                    break;
+                case Mode.FRIGHTENED:
+                    currentSpeedPenalty = FRIGHTENED_SPEED_PENALTY;
+                    targetTile = this._map.GetRandomTile().Position;
+                    break;
+                case Mode.RETURNING:
+                    currentSpeedPenalty = RETURNING_SPEED_PENALTY;
+                    targetTile = this._cage.GetReturnPoint();
+                    break;
+            }
 	    }
         // Extra slowdown if we're in the Teleporter:
 	    if (_inTeleporter)
@@ -199,7 +226,7 @@ public abstract class Ghost : MonoBehaviour {
     private Vector3 GetMoveDirection(Vector3 TargetTile)
     {
         GameField.TileType exclude = GameField.TileType.Wall;
-        if (this._currentMode != Mode.RETURNING)
+        if (this._currentMode != Mode.RETURNING && !_leavingCage)
         {
             // If we're not returning, we can't go into the cage.
             exclude |= GameField.TileType.CageDoor;
