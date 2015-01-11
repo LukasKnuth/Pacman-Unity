@@ -46,7 +46,6 @@ public class Cage : MonoBehaviour {
         // Start the mode changes:
         this._currentDuration = 0;
         this._currentModeIteration = 0;
-        this._dotsConsumed = 0;
         this._ghostKillCombo = 0;
     }
 
@@ -80,13 +79,12 @@ public class Cage : MonoBehaviour {
     /// <summary>
     /// The player has consumed a new Dot.
     /// </summary>
-    public void DotComsumed() {
-        this._dotsConsumed++;
-        if (_dotsConsumed == 30)
+    public void DotConsumed(int totalConsumed) {
+        if (totalConsumed == 30)
         {
             // TODO Release inky!
         }
-        if (_dotsConsumed == 60)
+        if (totalConsumed == 60)
         {
             // TODO Release clyde!
         }
@@ -100,7 +98,6 @@ public class Cage : MonoBehaviour {
     // ---------- PRIVATE SCRIPTING INTERFACE -----------------
     private const int BLINKY_INDEX = 0;
     private const int PINKY_INDEX = 1;
-    private int _dotsConsumed = 0;
     private int _ghostKillCombo = 0;
     private GhostHolder[] _allGhosts;
     private GameController _gameController;

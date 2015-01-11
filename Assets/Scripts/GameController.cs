@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.UI;
 
 public class GameController : MonoBehaviour
@@ -8,6 +9,7 @@ public class GameController : MonoBehaviour
     public Text PointsDisplay;
     public Text LivesDisplay;
     public GameObject FieldPointsPrefab;
+    public GameObject BonusFruitPrefab;
     public Canvas UiCanvas;
 
     // ---------- PUBLIC SCRIPTING INTERFACE -----------------
@@ -16,7 +18,14 @@ public class GameController : MonoBehaviour
     /// </summary>
     public void DotConsumed(int points_worth) {
         this.AddPoints(points_worth);
-        this._cage.DotComsumed();
+        this._dotsConsumed++;
+        this._cage.DotConsumed(_dotsConsumed);
+        // Bonus Fruit for extra points!
+        if (_dotsConsumed == 70 || _dotsConsumed == 170) {
+            Vector3 bonusPosition = new Vector3(130, 0, -166);
+            Quaternion bonusRotation = Quaternion.identity;
+            Instantiate(BonusFruitPrefab, bonusPosition, bonusRotation);
+        }
     }
 
     /// <summary>
@@ -26,6 +35,13 @@ public class GameController : MonoBehaviour
         this.AddPoints(points_worth);
         // Display the points this kill was worth:
         this.DisplayOnScreenPoints(position, points_worth.ToString());
+    }
+
+    public void BonusConsumed(int points_worth, Vector3 position)
+    {
+        this.AddPoints(points_worth);
+        this.DisplayOnScreenPoints(position, points_worth.ToString());
+        // TODO play sound, etz...
     }
 
     public void SubstractLive()
@@ -56,6 +72,7 @@ public class GameController : MonoBehaviour
     // ---------- PRIVATE SCRIPTING INTERFACE -----------------
     private int _points;
     private int _lives;
+    private int _dotsConsumed = 0;
     private Cage _cage;
     private PacmanController _player;
 

@@ -6,10 +6,10 @@ public class Consumable : MonoBehaviour
 {
 
     public int ScoreValue;
-    private GameController controller;
+    protected GameController controller;
 
 	// Use this for initialization
-	void Start ()
+	protected void Start ()
 	{
         // Find the GameController.
 	    GameObject obj = GameObject.FindWithTag("GameController");
@@ -27,9 +27,17 @@ public class Consumable : MonoBehaviour
     {
         if (other.tag == "Player")
         {
-            controller.DotConsumed(this.ScoreValue);
-            Destroy(gameObject);
+            this.Consumed();
         }
+    }
+
+    /// <summary>
+    /// This Consumable object has been consumed by the player
+    /// </summary>
+    protected virtual void Consumed()
+    {
+        controller.DotConsumed(this.ScoreValue);
+        Destroy(gameObject);
     }
 
 }

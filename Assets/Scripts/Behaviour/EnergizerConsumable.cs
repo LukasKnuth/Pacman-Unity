@@ -1,14 +1,14 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent(typeof(Consumable))]
-public class EnergizerConsumable : MonoBehaviour {
+public class EnergizerConsumable : Consumable {
 
     private Cage _cage;
 
     // Use this for initialization
     void Start()
     {
+        base.Start();
         // Find the GameController.
         GameObject obj = GameObject.FindWithTag("Cage");
         if (obj != null)
@@ -20,13 +20,10 @@ public class EnergizerConsumable : MonoBehaviour {
             Debug.LogError("Can't find Cage!");
         }
     }
-	
-	// Update is called once per frame
-    void OnTriggerEnter(Collider other)
+
+    protected override void Consumed()
     {
-        if (other.tag == "Player")
-        {
-            this._cage.EnergizerConsumed();
-        }
+        this._cage.EnergizerConsumed();
+        base.Consumed();
     }
 }
