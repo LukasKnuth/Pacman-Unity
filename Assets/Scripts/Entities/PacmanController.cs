@@ -2,6 +2,8 @@
 using Pacman.Map;
 using UnityEngine;
 
+[RequireComponent(typeof(Collider))]
+[RequireComponent(typeof(Rigidbody))]
 public class PacmanController : MonoBehaviour
 {
     // ---------- PUBLIC INSPECTOR INTERFACE -----------------
