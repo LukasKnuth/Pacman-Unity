@@ -10,6 +10,7 @@ public abstract class Ghost : MonoBehaviour {
     // ---------- PUBLIC INSPECTOR INTERFACE -----------------
     public Vector3 HomeCorner;
     public float Speed;
+    public Material FrightenedMaterial;
 
     // ---------- PUBLIC SCRIPTING INTERFACE -----------------
     public enum Mode
@@ -79,6 +80,7 @@ public abstract class Ghost : MonoBehaviour {
             if (new_mode == Mode.FRIGHTENED)
             {
                 this._frightenedTimerStart = Time.time;
+                renderer.material = FrightenedMaterial;
             }
         }
         Debug.Log("New Mode is: " + _currentMode);
@@ -98,6 +100,7 @@ public abstract class Ghost : MonoBehaviour {
     private Tile _currentTile;
     private Mode _currentMode;
     private Mode _previousMode;
+    private Material _originalMaterial;
     
     private float _frightenedTimerStart;
     private bool _inTeleporter = false;
@@ -134,6 +137,11 @@ public abstract class Ghost : MonoBehaviour {
         {
             Debug.LogError("Can't find the Cage!");
         }
+	    if (this.FrightenedMaterial == null)
+	    {
+	        Debug.LogError("No material for Frightened mode was added!");
+	    }
+	    this._originalMaterial = renderer.material;
 	}
 
     void OnTriggerEnter(Collider other)
@@ -158,12 +166,13 @@ public abstract class Ghost : MonoBehaviour {
     }
 	
 	void Update () {
-        // Check the timers:
+        // Check the frightened timer:
 	    if (this._frightenedTimerStart > 0
 	        && (this._frightenedTimerStart + Cage.FRIGHTENED_TIME <= Time.time))
 	    {
 	        SetMode(this._previousMode, false);
 	        this._frightenedTimerStart = 0;
+            renderer.material = _originalMaterial;
 	    }
         // If we're returning, check if we are close enough to the return point:
 	    if (_currentMode == Mode.RETURNING)
@@ -173,6 +182,7 @@ public abstract class Ghost : MonoBehaviour {
             {
                 SetMode(this._previousMode, false);
                 this._currentDirection = Vector3.forward;
+                renderer.material = _originalMaterial;
             }
 	    }
         // If we're leaving the cage, check if we're out yet:
@@ -263,8 +273,6 @@ public abstract class Ghost : MonoBehaviour {
             {
                 // A change of direction is only allowed once per field!
                 return _currentDirection;
-
-                // TODO This Bugs if a ghost is near a wall and is forced into a mode change, as he now has the opposite direction and can't recalculate, he is passing through the wall. -- BTW, This is used when forcing the ghost back out of the cage after reveiving him
             }
             else
             {
