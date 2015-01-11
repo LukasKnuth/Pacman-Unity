@@ -73,6 +73,8 @@ public abstract class Ghost : MonoBehaviour {
             if (force_reversal)
             {
                 this._currentDirection = -this._currentDirection;
+                // We need to force a re-calculation of the target-tile:
+                this._currentTile = null;
             }
             if (new_mode == Mode.FRIGHTENED)
             {
