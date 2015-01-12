@@ -86,7 +86,7 @@ public class Cage : MonoBehaviour {
         }
         if (totalConsumed == 60)
         {
-            // TODO Release clyde!
+            this._allGhosts[CLYDE_INDEX].AI.Unleash(Vector3.forward, Ghost.Mode.CHASE);
         }
     }
 
@@ -99,6 +99,7 @@ public class Cage : MonoBehaviour {
     private const int BLINKY_INDEX = 0;
     private const int PINKY_INDEX = 1;
     private const int INKY_INDEX = 2;
+    private const int CLYDE_INDEX = 3;
     private int _ghostKillCombo = 0;
     private GhostHolder[] _allGhosts;
     private GameController _gameController;
@@ -120,7 +121,10 @@ public class Cage : MonoBehaviour {
             {
                 this._allGhosts[INKY_INDEX] = new GhostHolder(ghost, g.transform.position);
             }
-            // TODO Add the others!
+            else if (ghost is Clyde)
+            {
+                this._allGhosts[CLYDE_INDEX] = new GhostHolder(ghost, g.transform.position);
+            }
 	    }
 	    GameObject controllerGameObject = GameObject.FindWithTag("GameController");
 	    this._gameController = controllerGameObject.GetComponent<GameController>();
