@@ -6,7 +6,7 @@ public class EnergizerConsumable : Consumable {
     private Cage _cage;
 
     // Use this for initialization
-    void Start()
+    new void Start()
     {
         base.Start();
         // Find the GameController.
