@@ -37,11 +37,22 @@ public class GameController : MonoBehaviour
         this.DisplayOnScreenPoints(position, points_worth.ToString());
     }
 
+    /// <summary>
+    /// To be called, when the Player ate the bonus-fruit.
+    /// </summary>
     public void BonusConsumed(int points_worth, Vector3 position)
     {
         this.AddPoints(points_worth);
         this.DisplayOnScreenPoints(position, points_worth.ToString());
         // TODO play sound, etz...
+    }
+
+    /// <summary>
+    /// Get the number of Dots that where consumed until now.
+    /// </summary>
+    public int GetDotsConsumed()
+    {
+        return this._dotsConsumed;
     }
 
     public void SubstractLive()

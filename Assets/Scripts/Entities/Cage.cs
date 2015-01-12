@@ -43,6 +43,13 @@ public class Cage : MonoBehaviour {
     {
         this._allGhosts[BLINKY_INDEX].AI.Unleash(Vector3.left, Ghost.Mode.CHASE, false);
         this._allGhosts[PINKY_INDEX].AI.Unleash(Vector3.forward, Ghost.Mode.CHASE);
+        if (_gameController.GetDotsConsumed() >= INKY_DOT_LIMIT)
+        {
+            this._allGhosts[INKY_INDEX].AI.Unleash(Vector3.forward, Ghost.Mode.CHASE);
+        }
+        if (_gameController.GetDotsConsumed() >= CLYDE_DOT_LIMIT) {
+            this._allGhosts[CLYDE_INDEX].AI.Unleash(Vector3.forward, Ghost.Mode.CHASE);
+        }
         // Start the mode changes:
         this._currentDuration = 0;
         this._currentModeIteration = 0;
@@ -80,11 +87,11 @@ public class Cage : MonoBehaviour {
     /// The player has consumed a new Dot.
     /// </summary>
     public void DotConsumed(int totalConsumed) {
-        if (totalConsumed == 30)
+        if (totalConsumed == INKY_DOT_LIMIT)
         {
             this._allGhosts[INKY_INDEX].AI.Unleash(Vector3.forward, Ghost.Mode.CHASE);
         }
-        if (totalConsumed == 60)
+        if (totalConsumed == CLYDE_DOT_LIMIT)
         {
             this._allGhosts[CLYDE_INDEX].AI.Unleash(Vector3.forward, Ghost.Mode.CHASE);
         }
@@ -100,6 +107,10 @@ public class Cage : MonoBehaviour {
     private const int PINKY_INDEX = 1;
     private const int INKY_INDEX = 2;
     private const int CLYDE_INDEX = 3;
+
+    private const int INKY_DOT_LIMIT = 30;
+    private const int CLYDE_DOT_LIMIT = 60;
+
     private int _ghostKillCombo = 0;
     private GhostHolder[] _allGhosts;
     private GameController _gameController;
@@ -185,12 +196,12 @@ public class Cage : MonoBehaviour {
     {
         if (this._frightenedTimer > 0)
         {
-            if (_frightenedTimer > 0 && _frightenedTimer - Time.deltaTime <= 0) {
+            // Ghosts are frightened, do the frightened timer:
+            this._frightenedTimer -= Time.deltaTime;
+            if (this._frightenedTimer <= 0) {
                 this._ghostKillCombo = 0;
                 Debug.Log("Fright time over!");
             }
-            // Ghosts are frightened, do the frightened timer:
-            this._frightenedTimer -= Time.deltaTime;
         }
         else
         {
