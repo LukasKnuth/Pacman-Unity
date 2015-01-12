@@ -82,7 +82,7 @@ public class Cage : MonoBehaviour {
     public void DotConsumed(int totalConsumed) {
         if (totalConsumed == 30)
         {
-            // TODO Release inky!
+            this._allGhosts[INKY_INDEX].AI.Unleash(Vector3.forward, Ghost.Mode.CHASE);
         }
         if (totalConsumed == 60)
         {
@@ -98,6 +98,7 @@ public class Cage : MonoBehaviour {
     // ---------- PRIVATE SCRIPTING INTERFACE -----------------
     private const int BLINKY_INDEX = 0;
     private const int PINKY_INDEX = 1;
+    private const int INKY_INDEX = 2;
     private int _ghostKillCombo = 0;
     private GhostHolder[] _allGhosts;
     private GameController _gameController;
@@ -114,6 +115,10 @@ public class Cage : MonoBehaviour {
             }
             else if (ghost is Pinky) {
                 this._allGhosts[PINKY_INDEX] = new GhostHolder(ghost, g.transform.position);
+            }
+            else if (ghost is Inky)
+            {
+                this._allGhosts[INKY_INDEX] = new GhostHolder(ghost, g.transform.position);
             }
             // TODO Add the others!
 	    }

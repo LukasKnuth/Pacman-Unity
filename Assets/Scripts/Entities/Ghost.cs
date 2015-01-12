@@ -110,7 +110,7 @@ public abstract class Ghost : MonoBehaviour {
     private const float TELEPORTER_SPEED_PENALTY = 0.6f; // -40%
     private const float RETURNING_SPEED_PENALTY = 1.5f;  // +50%
 
-	void Start ()
+	protected void Start ()
 	{
         GameObject pacmanGameObject = GameObject.FindWithTag("Player");
 	    if (pacmanGameObject == null)
