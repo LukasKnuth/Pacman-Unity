@@ -1,4 +1,5 @@
 ﻿using System;
+using Pacman.Map;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,6 +12,7 @@ public class GameController : MonoBehaviour
     public GameObject FieldPointsPrefab;
     public GameObject BonusFruitPrefab;
     public Canvas UiCanvas;
+    public GameObject PauseMenu;
 
     // ---------- PUBLIC SCRIPTING INTERFACE -----------------
     /// <summary>
@@ -80,12 +82,26 @@ public class GameController : MonoBehaviour
         LivesDisplay.text = "Lives: " + _lives;
     }
 
+    public void MenuRestart()
+    {
+        this.Reset();
+        this.MenuContinue();
+        this._cage.StartGhosts();
+    }
+    public void MenuContinue()
+    {
+        Time.timeScale = 1;
+        this._isPaused = false;
+        this.PauseMenu.SetActive(false);
+    }
+
     // ---------- PRIVATE SCRIPTING INTERFACE -----------------
     private int _points;
     private int _lives;
     private int _dotsConsumed = 0;
     private Cage _cage;
     private PacmanController _player;
+    private GameField _map;
 
     private readonly Quaternion _textRotation = Quaternion.AngleAxis(90, Vector3.right);
     private void DisplayOnScreenPoints(Vector3 position, string text)
@@ -105,11 +121,26 @@ public class GameController : MonoBehaviour
         this.PointsDisplay.text = "Points: " + this._points;
     }
 
+    /// <summary>
+    /// Reset the entire game completely to start over again.
+    /// </summary>
+    private void Reset() {
+        _points = 0;
+        this.PointsDisplay.text = "Points: " + this._points;
+        _lives = 3;
+        this.LivesDisplay.text = "Lives: " + this._lives;
+        _dotsConsumed = 0;
+        if (this._started)
+        {
+            _player.Reset();
+            _cage.ResetGhosts();
+            _map.Reset();
+        }
+    }
+
 	// Use this for initialization
 	void Start ()
 	{
-	    _points = 0;
-	    _lives = 3;
 	    GameObject cageGameObject = GameObject.FindWithTag("Cage");
 	    this._cage = cageGameObject.GetComponent<Cage>();
 	    if (this._cage == null)
@@ -122,10 +153,17 @@ public class GameController : MonoBehaviour
 	    {
 	        Debug.LogError("Didn't find player!");
 	    }
+	    GameObject mapGameObject = GameObject.FindWithTag("Map");
+	    this._map = mapGameObject.GetComponent<GameField>();
+	    if (this._map == null)
+	    {
+	        Debug.LogError("Couldn't find the Map!");
+	    }
+        this.Reset();
 	}
 
     private bool _started = false;
-    private bool _paused = false;
+    private bool _isPaused = false;
     void Update()
     {
         if (!_started)
@@ -134,6 +172,19 @@ public class GameController : MonoBehaviour
             this._cage.StartGhosts();
             _started = true;
         }
-        
+        if (Input.GetButtonUp("Pause"))
+        {
+            if (this._isPaused)
+            {
+                this.MenuContinue();
+            }
+            else
+            {
+                // Pause:
+                Time.timeScale = 0;
+                this._isPaused = true;
+            }
+            this.PauseMenu.SetActive(this._isPaused);
+        }
     }
 }

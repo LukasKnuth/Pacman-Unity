@@ -31,6 +31,18 @@ namespace Pacman.Map
             return new Tile(this, row, col);
         }
 
+        /// <summary>
+        /// Reset the Dots and Energizers on the map.
+        /// </summary>
+        public void Reset()
+        {
+            foreach (GameObject consumable in GameObject.FindGameObjectsWithTag("Consumable"))
+            {
+                Destroy(consumable);
+            }
+            this.PopulateField();
+        }
+
         // ----------------- PRIVATE INTERFACE -------------------------
         internal const int MAP_HEIGHT = 31;
         internal const int MAP_WIDTH = 28;
