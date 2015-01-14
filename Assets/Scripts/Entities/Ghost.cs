@@ -15,7 +15,7 @@ public abstract class Ghost : MonoBehaviour {
     // ---------- PUBLIC SCRIPTING INTERFACE -----------------
     public enum Mode
     {
-        CAGED, SCATTER, FRIGHTENED, CHASE, RETURNING
+        CAGED, SCATTER, FRIGHTENED, CHASE
     }
 
     /// <summary>
@@ -45,8 +45,10 @@ public abstract class Ghost : MonoBehaviour {
         this._currentDirection = Vector3.zero;
         SetMode(Mode.CAGED, false);
         transform.position = position;
+        renderer.material = _originalMaterial;
         this._currentTile = this._map.GetTileAt(position);
         this._leavingCage = false;
+        this._isReturning = false;
     }
 
     /// <summary>
@@ -55,33 +57,17 @@ public abstract class Ghost : MonoBehaviour {
     public void SetMode(Mode new_mode, bool force_reversal = true)
     {
         // TODO If the ghost is in the cage, don't change the mode
-        // TODO This still buggy, when we're in RETURNING and a timed mode-change happens, we can't enter the cage. Why??
-        if (this._currentMode == Mode.RETURNING && (new_mode != this._previousMode))
+        this._previousMode = this._currentMode;
+        this._currentMode = new_mode;
+        if (!this._isReturning && force_reversal)
         {
-            // We're currently returning and have not yet reached the point to reset our mode.
-            // Store the new mode as the previous, so continue with it once we're revived:
-            this._previousMode = new_mode;
+            this._currentDirection = -this._currentDirection;
+            // We need to force a re-calculation of the target-tile:
+            this._currentTile = null;
         }
-        else
-        {
-            if (new_mode != Mode.RETURNING)
-            {
-                // Don't override the previous mode, if we're going into return-mode
-                this._previousMode = this._currentMode;
-            }
-            this._currentMode = new_mode;
-            // Force direction reversal:
-            if (force_reversal)
-            {
-                this._currentDirection = -this._currentDirection;
-                // We need to force a re-calculation of the target-tile:
-                this._currentTile = null;
-            }
-            if (new_mode == Mode.FRIGHTENED)
-            {
-                this._frightenedTimerStart = Time.time;
-                renderer.material = FrightenedMaterial;
-            }
+        if (new_mode == Mode.FRIGHTENED) {
+            this._frightenedTimerStart = Time.time;
+            renderer.material = FrightenedMaterial;
         }
         Debug.Log("New Mode is: " + _currentMode);
     }
@@ -105,6 +91,7 @@ public abstract class Ghost : MonoBehaviour {
     private float _frightenedTimerStart;
     private bool _inTeleporter = false;
     private bool _leavingCage = false;
+    private bool _isReturning = false;
 
     private const float FRIGHTENED_SPEED_PENALTY = 0.5f; // -50%
     private const float TELEPORTER_SPEED_PENALTY = 0.6f; // -40%
@@ -148,15 +135,15 @@ public abstract class Ghost : MonoBehaviour {
     {
         if (other.tag == "Player")
         {
-            if (this._currentMode == Mode.FRIGHTENED) {
-                // He got me:
-                SetMode(Mode.RETURNING, false);
-                this._frightenedTimerStart = 0;
-                this._cage.GotGhost(this);
-            }
-            else if (this._currentMode == Mode.RETURNING) {
+            if (this._isReturning) {
                 // Already dead, ignore.
                 return;
+            }
+            else if (this._currentMode == Mode.FRIGHTENED) {
+                // He got me:
+                this._isReturning = true;
+                this._frightenedTimerStart = 0;
+                this._cage.GotGhost(this);
             }
             else {
                 // Got him!
@@ -175,12 +162,12 @@ public abstract class Ghost : MonoBehaviour {
             renderer.material = _originalMaterial;
 	    }
         // If we're returning, check if we are close enough to the return point:
-	    if (_currentMode == Mode.RETURNING)
+	    if (this._isReturning)
 	    {
             float distance = Vector3.Distance(transform.position, this._cage.GetReturnPoint());
-            if (distance < 5)
+            if (distance < 8)
             {
-                SetMode(this._previousMode, false);
+                this._isReturning = false;
                 this._currentDirection = Vector3.forward;
                 renderer.material = _originalMaterial;
             }
@@ -200,7 +187,12 @@ public abstract class Ghost : MonoBehaviour {
 	    if (_leavingCage)
 	    {
 	        targetTile = this._cage.GetExitPoint();
-	    }
+        }
+        else if (this._isReturning)
+        {
+            currentSpeedPenalty = RETURNING_SPEED_PENALTY;
+            targetTile = this._cage.GetReturnPoint();
+        }
 	    else
 	    {
             switch (this._currentMode) {
@@ -218,10 +210,6 @@ public abstract class Ghost : MonoBehaviour {
                     currentSpeedPenalty = FRIGHTENED_SPEED_PENALTY;
                     targetTile = this._map.GetRandomTile().Position;
                     break;
-                case Mode.RETURNING:
-                    currentSpeedPenalty = RETURNING_SPEED_PENALTY;
-                    targetTile = this._cage.GetReturnPoint();
-                    break;
             }
 	    }
         // Extra slowdown if we're in the Teleporter:
@@ -237,11 +225,11 @@ public abstract class Ghost : MonoBehaviour {
 
     private Vector3 GetMoveDirection(Vector3 TargetTile)
     {
-        GameField.TileType exclude = GameField.TileType.Wall;
-        if (this._currentMode != Mode.RETURNING && !_leavingCage)
+        GameField.TileType exclude = GameField.TileType.Wall | GameField.TileType.CageDoor;
+        if (this._isReturning || this._leavingCage)
         {
-            // If we're not returning, we can't go into the cage.
-            exclude |= GameField.TileType.CageDoor;
+            // We need to be able to pass through the Cage-Door when Returning/Leaving
+            exclude ^= GameField.TileType.CageDoor;
         }
         // Where are we?
         float shortestDistance = float.MaxValue;
