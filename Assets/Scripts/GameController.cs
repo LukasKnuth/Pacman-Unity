@@ -7,12 +7,20 @@ public class GameController : MonoBehaviour
 {
 
     // ---------- PUBLIC INSPECTOR INTERFACE -----------------
+    [Header("UI Elements")]
     public Text PointsDisplay;
     public Text LivesDisplay;
-    public GameObject FieldPointsPrefab;
+    [Header("Bonus Prefabs")]
     public GameObject BonusFruitPrefab;
+    [Header("On-Screen UI Prefabs")]
     public Canvas UiCanvas;
+    public GameObject FieldPointsPrefab;
+    [Header("Pause Menu")]
     public GameObject PauseMenu;
+    [Header("GameOver Menu")]
+    public GameObject GameOverMenu;
+    public Text GameOverPoints;
+    public Text GameOverText;
 
     // ---------- PUBLIC SCRIPTING INTERFACE -----------------
     /// <summary>
@@ -27,6 +35,11 @@ public class GameController : MonoBehaviour
             Vector3 bonusPosition = new Vector3(130, 0, -166);
             Quaternion bonusRotation = Quaternion.identity;
             Instantiate(BonusFruitPrefab, bonusPosition, bonusRotation);
+        }
+        // Check if we won:
+        if (_dotsConsumed == 244)
+        {
+            this.GameOver(true, this._points);
         }
     }
 
@@ -72,7 +85,8 @@ public class GameController : MonoBehaviour
         }
         else
         {
-            // TODO Display game over, reset everything!
+            // Player is dead:
+            this.GameOver(false, this._points);
         }
     }
 
@@ -93,6 +107,7 @@ public class GameController : MonoBehaviour
         Time.timeScale = 1;
         this._isPaused = false;
         this.PauseMenu.SetActive(false);
+        this.GameOverMenu.SetActive(false);
     }
 
     // ---------- PRIVATE SCRIPTING INTERFACE -----------------
@@ -119,6 +134,15 @@ public class GameController : MonoBehaviour
     {
         this._points += points;
         this.PointsDisplay.text = "Points: " + this._points;
+    }
+
+    private void GameOver(bool win, int points)
+    {
+        Time.timeScale = 0;
+        GameOverPoints.text = points + " Points";
+        GameOverText.text = (win) ? "You Won!" : "Game Over!";
+        // TODO Play sound?
+        GameOverMenu.SetActive(true);
     }
 
     /// <summary>
