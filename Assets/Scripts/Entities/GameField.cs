@@ -78,60 +78,58 @@ namespace Pacman.Map
 
         private void PopulateField()
         {
-            int x = 0, y = 0;
-            char current;
-            using (StreamReader file = new StreamReader(Application.dataPath + "/Levels/default.txt"))
+            int x = 0, y = 0, i = 0;
+            TextAsset level_res = Resources.Load("Levels/default") as TextAsset;
+            char[] file = level_res.text.ToCharArray();
+            do
             {
-                do
+                switch (file[i])
                 {
-                    current = (char)file.Read();
-                    switch (current)
-                    {
-                        case '▓':
-                            SetField(x, y, TileType.Wall);
-                            break;
-                        case '.':
-                            SetField(x, y, TileType.Dot);
-                            // Instanciate a new (eatable) Dot-prefab:
-                            Vector3 dot_position = new Vector3(
-                                x * TileSize - (TileSize / 2),
-                                2,
-                                -(y * TileSize - (TileSize / 2))
-                            );
-                            Instantiate(DotPrefab, dot_position, Quaternion.identity);
-                            break;
-                        case '0':
-                            SetField(x, y, TileType.Energizer);
-                            Vector3 energizer_position = new Vector3(
-                                x * TileSize - (TileSize / 2),
-                                2,
-                                -(y * TileSize - (TileSize / 2))
-                            );
-                            Instantiate(EnergizerPrefab, energizer_position, Quaternion.identity);
-                            break;
-                        case ' ':
-                            SetField(x, y, TileType.Free);
-                            break;
-                        case 't':
-                            SetField(x, y, TileType.Teleporter);
-                            break;
-                        case 'c':
-                            SetField(x, y, TileType.CageDoor);
-                            break;
-                        case '\r':
-                            // Ignore this...
-                            break;
-                        case '\n':
-                            y++;
-                            x = -1; // Will be 0 when loop ends
-                            break;
-                        default:
-                            Debug.LogError("Unrecognized Map Character: '" + current + "'");
-                            break;
-                    }
-                    x++;
-                } while (!file.EndOfStream);
-            }
+                    case '▓':
+                        SetField(x, y, TileType.Wall);
+                        break;
+                    case '.':
+                        SetField(x, y, TileType.Dot);
+                        // Instanciate a new (eatable) Dot-prefab:
+                        Vector3 dot_position = new Vector3(
+                            x * TileSize - (TileSize / 2),
+                            2,
+                            -(y * TileSize - (TileSize / 2))
+                        );
+                        Instantiate(DotPrefab, dot_position, Quaternion.identity);
+                        break;
+                    case '0':
+                        SetField(x, y, TileType.Energizer);
+                        Vector3 energizer_position = new Vector3(
+                            x * TileSize - (TileSize / 2),
+                            2,
+                            -(y * TileSize - (TileSize / 2))
+                        );
+                        Instantiate(EnergizerPrefab, energizer_position, Quaternion.identity);
+                        break;
+                    case ' ':
+                        SetField(x, y, TileType.Free);
+                        break;
+                    case 't':
+                        SetField(x, y, TileType.Teleporter);
+                        break;
+                    case 'c':
+                        SetField(x, y, TileType.CageDoor);
+                        break;
+                    case '\r':
+                        // Ignore this...
+                        break;
+                    case '\n':
+                        y++;
+                        x = -1; // Will be 0 when loop ends
+                        break;
+                    default:
+                        Debug.LogError("Unrecognized Map Character: '" + file[i] + "'");
+                        break;
+                }
+                x++;
+                i++;
+            } while (i < file.Length);
         }
 
         private void SetField(int x, int y, TileType type)
