@@ -40,7 +40,7 @@ header {
   width: 100%;
   border-bottom: 1px dashed #b5e853;
   padding: 20px 0;
-  margin: 0 0 40px 0;
+  margin: 0 0 10px 0;
 }
 
 header h1 {
@@ -76,6 +76,11 @@ header h2 {
 
 /* Main Content
 */
+
+#unityPlayer{
+	margin: 0 auto;
+	width: 960px;
+}
 
 #main_content {
   width: 100%;
