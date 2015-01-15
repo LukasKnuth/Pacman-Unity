@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 3b53eb3a85b9c634785fecc7766909b4
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences:
+  - FrightenedMaterial: {fileID: 2100000, guid: ec24d341d0b3bb945ae571da43ac09ed,
+      type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
